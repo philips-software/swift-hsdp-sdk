@@ -1,0 +1,69 @@
+{
+    "active": true,
+    "scope": "scope",
+    "username": "user@philips.com",
+    "exp": 1662553920,
+    "sub": "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9",
+    "iss": "iss",
+    "organizations": {
+        "managingOrganization": "3a0055dfdf1-bb4dfdf-4931-9ee4-7ec3a1dfdffea318",
+        "organizationList": [
+            {
+                "organizationId": "f870dfdf69ee-e5bd-4a2dfdf9-ade0-540fd4edfdfdfa16d3",
+                "permissions": [
+                    "ALL.WRITE",
+                    "PATIENT.PURGE",
+                    "ALL.READ",
+                    "ORGANIZATION.WRITE",
+                    "ORGANIZATION.MFA",
+                    "ORGANIZATION.PURGE",
+                    "ORGANIZATION.READ"
+                ],
+                "organizationName": "organizationName",
+                "groups": [
+                    "groups"
+                ],
+                "roles": [
+                    "ROLE"
+                ]
+            },
+            {
+                "organizationId": "f18dfd21856-44f6-47b5-9cbc-866ddfdf935b39f1",
+                "permissions": [
+                    "ALL.WRITE",
+                    "PATIENT.PURGE",
+                    "ALL.READ",
+                    "ORGANIZATION.PURGE"
+                ],
+                "organizationName": "ROL",
+                "groups": [
+                    "groups"
+                ],
+                "roles": [
+                    "ROLES"
+                ]
+            },
+            {
+                "organizationId": "3a00dfdf5501-bbdfdf4f-49dfd31-9ee4-7ecdfdf3a1fea318",
+                "permissions": [
+                    "ROLE.READ",
+                    "PERMISSION.READ",
+                    "HSDP_IAM_ORGANIZATION.READ",
+                    "SERVICE.READ",
+                    "USER.READ",
+                    "GROUP.READ"
+                ],
+                "organizationName": "organizationName",
+                "groups": [
+                    "groups"
+                ],
+                "roles": [
+                    "ROLES"
+                ]
+            },
+        ]
+    },
+    "client_id": "client_id",
+    "token_type": "Bearer",
+    "identity_type": "identity_type"
+}

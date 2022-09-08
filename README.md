@@ -1,1 +1,3 @@
-# swift-hsdp-sdk
+# Swift HSDP SDK
+
+Work in progress.
