@@ -6,9 +6,15 @@ import SwiftUI
 public class SwiftHsdpSdk {
     
     private let manager: Session
-
-    public init(manager: Session = Session.default) {
+    private let url: HsdpUrlBuilder
+    
+    public init(manager: Session = Session.default, url: HsdpUrlBuilder = HsdpUrlBuilder()) {
         self.manager = manager
+        self.url = url
+    }
+    
+    public func getHsdpUrlBuilder() -> HsdpUrlBuilder {
+        return url;
     }
     
     public func login(lr: LoginRequest) async throws -> LoginResponse
@@ -28,7 +34,7 @@ public class SwiftHsdpSdk {
             "password": "\(lr.password)"
         ]
         
-        return try await manager.request("https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/token", method: .post, parameters: parameters, headers: headers).serializingDecodable(LoginResponse.self).value
+        return try await manager.request("\(url.getIAMURL())\(url.tokenPath)", method: .post, parameters: parameters, headers: headers).serializingDecodable(LoginResponse.self).value
     }
     
     public func introspect(ir: IntrospectRequest) async throws -> IntrospectResponse
@@ -46,77 +52,47 @@ public class SwiftHsdpSdk {
             "token": "\(ir.accessToken)"
         ]
         
-        return try await manager.request("https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/introspect", method: .post, parameters: parameters, headers: headers).serializingDecodable(IntrospectResponse.self).value
+        return try await manager.request("\(url.getIAMURL())\(url.introspectPath)", method: .post, parameters: parameters, headers: headers).serializingDecodable(IntrospectResponse.self).value
+    }
+    
+    public func refresh(rr: RefreshRequest) async throws -> RefreshResponse
+    {
+        let basicAuthentication = "\(rr.basicAuthentication.username):\(rr.basicAuthentication.password)".data(using: .utf8)?.base64EncodedString()
+        
+        let headers: HTTPHeaders = [
+            "Authorization": "Basic \(basicAuthentication!)",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "*/*"
+        ]
+        
+        let parameters: Parameters = [
+            "grant_type": "refresh_token",
+            "refresh_token": "\(rr.refreshToken)"
+        ]
+        
+        return try await manager.request("\(url.getIAMURL())\(url.tokenPath)", method: .post, parameters: parameters, headers: headers).serializingDecodable(RefreshResponse.self).value
+    }
+    
+    public func revoke(rr: RevokeRequest, onCompletion: @escaping ( Optional<Int>) -> Void)
+    {
+        let basicAuthentication = "\(rr.basicAuthentication.username):\(rr.basicAuthentication.password)".data(using: .utf8)?.base64EncodedString()
+        
+        let headers: HTTPHeaders = [
+            "Authorization": "Basic \(basicAuthentication!)",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "*/*",
+            "API-version": "2"
+        ]
+        
+        let parameters: Parameters = [
+            "token": "\(rr.token)"
+        ]
+        
+        manager.request("\(url.getIAMURL())\(url.revokePath)", method: .post, parameters: parameters, headers: headers).responseData(emptyResponseCodes: [200]) {
+            data in
+            onCompletion(data.response?.statusCode)
+        }.resume()
         
     }
     
-}
-
-public struct LoginResponse : Codable {
-    
-    public let access_token : String
-    public let refresh_token : String
-    public let scope : String
-    public let token_type : String
-    public let id_token : String
-    public let expires_in : Int
-}
-
-public struct IntrospectResponse : Codable {
-    
-    public let active: Bool
-    public let username: String
-    public let scope: String
-    public let exp: Int
-    let organizations: Organization
-}
-
-struct Organization: Codable {
-    
-    let managingOrganization: String
-    let organizationList: [OrganizationListItem]
-}
-
-struct OrganizationListItem: Codable {
-    
-    let organizationId : String
-    let permissions : [String]
-    
-}
-
-public struct LoginRequest {
-    
-    public init(username: String, password: String, basicAuthentication: BasicAuthentication) {
-        self.username = username
-        self.password = password
-        self.basicAuthentication = basicAuthentication
-    }
-    
-    let username : String
-    let password : String
-    let basicAuthentication : BasicAuthentication
-    
-}
-
-public struct IntrospectRequest {
-    
-    public init(accessToken: String, basicAuthentication: BasicAuthentication) {
-        self.accessToken = accessToken
-        self.basicAuthentication = basicAuthentication
-    }
-    
-    let accessToken : String
-    let basicAuthentication : BasicAuthentication
-    
-}
-
-public struct BasicAuthentication {
-    
-    public init(username: String, password: String) {
-        self.username = username
-        self.password = password
-    }
-    
-    let username : String
-    let password : String
 }
