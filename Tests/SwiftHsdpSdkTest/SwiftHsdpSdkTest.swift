@@ -6,14 +6,23 @@ import Mocker
 
 final class SwiftHsdpSdkTest: XCTestCase {
     
-    
-    func testLogin() async throws {
-        
+    var hsdpSDK: SwiftHsdpSdk!
+    var url: HsdpUrlBuilder!
+
+    override func setUp() {
+        super.setUp()
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockingURLProtocol.self] + (configuration.protocolClasses ?? [])
         let sessionManager = Session(configuration: configuration)
-        let hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
-        let url = hsdpSDK.getHsdpUrlBuilder();
+        hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
+        url = hsdpSDK.getHsdpUrlBuilder()
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+    }
+    
+    func testLogin() async throws {
         
         let apiEndpoint = URL(string: "\(url.getIAMURL())\(url.tokenPath)")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.loginResponse.data])
@@ -28,12 +37,6 @@ final class SwiftHsdpSdkTest: XCTestCase {
     
     func testIntrospect() async throws {
         
-        let configuration = URLSessionConfiguration.default
-        configuration.protocolClasses = [MockingURLProtocol.self] + (configuration.protocolClasses ?? [])
-        let sessionManager = Session(configuration: configuration)
-        let hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
-        let url = hsdpSDK.getHsdpUrlBuilder();
-        
         let apiEndpoint = URL(string: "\(url.getIAMURL())\(url.introspectPath)")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.introspectResponse.data])
         mock.register()
@@ -46,13 +49,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRefresh() async throws {
-        
-        let configuration = URLSessionConfiguration.default
-        configuration.protocolClasses = [MockingURLProtocol.self] + (configuration.protocolClasses ?? [])
-        let sessionManager = Session(configuration: configuration)
-        let hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
-        let url = hsdpSDK.getHsdpUrlBuilder();
-        
+                
         let apiEndpoint = URL(string: "\(url.getIAMURL())\(url.tokenPath)")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.refreshResponse.data])
         mock.register()
@@ -65,13 +62,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRevoke() async throws {
-        
-        let configuration = URLSessionConfiguration.default
-        configuration.protocolClasses = [MockingURLProtocol.self] + (configuration.protocolClasses ?? [])
-        let sessionManager = Session(configuration: configuration)
-        let hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
-        let url = hsdpSDK.getHsdpUrlBuilder();
-        
+                
         let apiEndpoint = URL(string: "\(url.getIAMURL())\(url.revokePath)")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.refreshResponse.data])
         let mockCalledback = expectation(description: "The mock should be called")
