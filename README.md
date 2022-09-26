@@ -1,5 +1,6 @@
 # swift-hsdp-sdk
 
+[![Swift](https://github.com/philips-software/swift-hsdp-sdk/actions/workflows/swift.yaml/badge.svg?branch=main)](https://github.com/philips-software/swift-hsdp-sdk/actions/workflows/swift.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This SDK provides a simple interface to features offered by the IAM services of HSDP.
