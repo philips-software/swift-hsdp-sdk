@@ -1,20 +1,40 @@
-//
-//  File.swift
-//  
-//
-//  Created by matthijs.van.marion@philips.com on 08/09/2022.
-//
+
 
 import Foundation
+
+public enum Environment : String {
+    case Prod = "iam-service"
+    case Dev = "iam-dev"
+    case ClientTest = "iam-client-test"
+}
+
+public enum Region : String {
+    case EuWest = "eu-west"
+    case UsEast = "us-east"
+    case UsWest = "us-west"
+
+    public func getIamUrl(_ environment: Environment) -> String {
+        return "https://\(environment.rawValue).\(rawValue).philips-healthsuite.com/"
+    }
+}
 
 public struct LoginResponse : Codable {
     
     public let access_token : String
-    public let refresh_token : String
+    public let refresh_token : String?
     public let scope : String
     public let token_type : String
-    public let id_token : String
-    public let expires_in : Int
+    public let id_token : String?
+    public let expires_in : UInt
+}
+
+public struct IntrospectResponse : Codable {
+    
+    public let active: Bool
+    public let username: String?
+    public let scope: String?
+    public let exp: Int?
+    let organizations: Organization?
 }
 
 public struct RefreshResponse : Codable {
@@ -22,20 +42,8 @@ public struct RefreshResponse : Codable {
     public let scope : String
     public let access_token : String
     public let token_type : String
-    public let id_token : String
+    public let id_token : String?
     public let expires_in : String
-}
-
-public struct IntrospectResponse : Codable {
-    
-    public let active: Bool
-    public let username: Optional<String>
-    public let scope: Optional<String>
-    public let exp: Optional<Int>
-    let organizations: Optional<Organization>
-    public let client_id: Optional<String>
-    public let token_type: Optional<String>
-    public let identity_type: Optional<String>
 }
 
 struct Organization: Codable {
@@ -48,97 +56,42 @@ struct OrganizationListItem: Codable {
     
     let organizationId : String
     let permissions : [String]
-    let organizationName: String
-    let groups : [String]
-    let roles : [String]
     
 }
 
-public struct LoginRequest {
-    
-    public init(username: String, password: String, basicAuthentication: BasicAuthentication) {
-        self.username = username
-        self.password = password
-        self.basicAuthentication = basicAuthentication
-    }
-    
-    let username : String
-    let password : String
-    let basicAuthentication : BasicAuthentication
-    
-}
+public struct Token : Codable {
+    public let tokenType: String
+    public let scopes: [String]
+    public let accessToken: String
+    public let refreshToken: String
+    public let expiresIn: UInt
+    public let timestamp: Date
 
-public struct IntrospectRequest {
-    
-    public init(accessToken: String, basicAuthentication: BasicAuthentication) {
+    public init(tokenType: String = "", scopes: [String] = [], accessToken: String = "", refreshToken: String = "", expiresIn: UInt = 0) {
+        self.tokenType = tokenType
+        self.scopes = scopes
         self.accessToken = accessToken
-        self.basicAuthentication = basicAuthentication
-    }
-    
-    let accessToken : String
-    let basicAuthentication : BasicAuthentication
-    
-}
-
-public struct BasicAuthentication {
-    
-    public init(username: String, password: String) {
-        self.username = username
-        self.password = password
-    }
-    
-    let username : String
-    let password : String
-}
-
-public struct RefreshRequest {
-    
-    public init(refreshToken: String, basicAuthentication: BasicAuthentication) {
         self.refreshToken = refreshToken
-        self.basicAuthentication = basicAuthentication
+        self.expiresIn = expiresIn
+        self.timestamp = .now
     }
     
-    let basicAuthentication : BasicAuthentication
-    let refreshToken: String
-    
-}
-
-public struct RevokeRequest {
-    
-    public init(token: String, basicAuthentication: BasicAuthentication) {
-        self.token = token
-        self.basicAuthentication = basicAuthentication
+    public init(from loginResponse: LoginResponse) {
+        self.tokenType = loginResponse.token_type
+        self.scopes = loginResponse.scope.components(separatedBy: " ")
+        self.accessToken = loginResponse.access_token
+        self.refreshToken = loginResponse.refresh_token ?? ""
+        self.expiresIn = loginResponse.expires_in
+        self.timestamp = .now
     }
     
-    let basicAuthentication : BasicAuthentication
-    let token: String
-    
-}
-
-public enum Environment: String {
-    case Prod = "iam-service", Dev = "iam-dev", ClientTest = "iam-client-test"
-}
-
-public enum Region: String {
-    case EuWest = "eu-west", UsEast = "us-east", UsWest = "us-west"
-}
-
-public struct HsdpUrlBuilder {
-    
-    public init(environment: Environment = Environment.Prod, region: Region = Region.EuWest) {
-        self.environment = environment
-        self.region = region
-    }
-    
-    let environment: Environment
-    let region: Region
-    
-    public let tokenPath = "authorize/oauth2/token"
-    public let revokePath = "authorize/oauth2/revoke"
-    public let introspectPath = "authorize/oauth2/introspect"
-    public let userInfoPath = "authorize/oauth2/userinfo"
-    
-    public func getIAMURL() -> String {
-        return "https://\(environment.rawValue).\(region.rawValue).philips-healthsuite.com/"
+    public func update(from refreshResponse: RefreshResponse) -> Token {
+        return Token(
+            tokenType: refreshResponse.token_type,
+            scopes: refreshResponse.scope.components(separatedBy: " "),
+            accessToken: refreshResponse.access_token,
+            refreshToken: self.refreshToken,
+            expiresIn: UInt(refreshResponse.expires_in) ?? 0
+        )
     }
 }

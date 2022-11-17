@@ -6,7 +6,7 @@ import Mocker
 
 final class SwiftHsdpSdkTest: XCTestCase {
     
-    var hsdpSDK: SwiftHsdpSdk!
+    var hsdpSDK: IamOAuth2!
     var url: HsdpUrlBuilder!
 
     override func setUp() {
@@ -14,7 +14,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
         let configuration = URLSessionConfiguration.default
         configuration.protocolClasses = [MockingURLProtocol.self] + (configuration.protocolClasses ?? [])
         let sessionManager = Session(configuration: configuration)
-        hsdpSDK = SwiftHsdpSdk(manager: sessionManager)
+        hsdpSDK = IamOAuth2(manager: sessionManager)
         url = hsdpSDK.getHsdpUrlBuilder()
     }
     
