@@ -13,8 +13,9 @@ public class IamOAuth2 {
     public let introspectPath = "authorize/oauth2/introspect"
     public let userInfoPath = "authorize/oauth2/userinfo"
     
+
     public convenience init(region: Region, environment: Environment, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
-        self.init(baseURL: region.getIamUrl(environment), clientId: clientId, clientSecret: clientSecret)
+        self.init(baseURL: region.getIamUrl(environment), clientId: clientId, clientSecret: clientSecret, session: session)
     }
     
     public init(baseURL: String, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
