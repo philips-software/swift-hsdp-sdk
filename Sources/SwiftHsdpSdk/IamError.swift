@@ -20,7 +20,13 @@ public enum IamError : String, Error {
     /// Token has expired
     case TokenExpired = "token_expired"
     
-    ///
+    /// There is no access token
+    case NoAccessToken = "no_access_token"
+
+    /// There is no refresh token
+    case NoRefreshToken = "no_refresh_token"
+    
+    /// Client is not authorized
     case UnAuthorizedClient = "unauthorized_client"
     
     ///  An unexpected error occured

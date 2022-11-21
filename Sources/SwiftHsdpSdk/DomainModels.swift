@@ -1,5 +1,4 @@
 
-
 import Foundation
 
 public enum Environment : String {
@@ -12,14 +11,9 @@ public enum Region : String {
     case EuWest = "eu-west"
     case UsEast = "us-east"
     case UsWest = "us-west"
-
-    public func getIamUrl(_ environment: Environment) -> String {
-        return "https://\(environment.rawValue).\(rawValue).philips-healthsuite.com/"
-    }
 }
 
 public struct LoginResponse : Codable {
-    
     public let access_token : String
     public let refresh_token : String?
     public let scope : String
@@ -29,16 +23,15 @@ public struct LoginResponse : Codable {
 }
 
 public struct IntrospectResponse : Codable {
-    
     public let active: Bool
     public let username: String?
     public let scope: String?
     public let exp: Int?
-    let organizations: Organization?
+    public let sub: String?
+    public let organizations: Organization?
 }
 
 public struct RefreshResponse : Codable {
-    
     public let scope : String
     public let access_token : String
     public let token_type : String
@@ -46,17 +39,14 @@ public struct RefreshResponse : Codable {
     public let expires_in : String
 }
 
-struct Organization: Codable {
-    
-    let managingOrganization: String
-    let organizationList: [OrganizationListItem]
+public struct Organization: Codable {
+    public let managingOrganization: String
+    public let organizationList: [OrganizationListItem]
 }
 
-struct OrganizationListItem: Codable {
-    
-    let organizationId : String
-    let permissions : [String]
-    
+public struct OrganizationListItem: Codable {
+    public let organizationId : String
+    public let permissions : [String]
 }
 
 public struct Token : Codable {

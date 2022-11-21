@@ -15,7 +15,8 @@ public class IamOAuth2 {
     
 
     public convenience init(region: Region, environment: Environment, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
-        self.init(baseURL: region.getIamUrl(environment), clientId: clientId, clientSecret: clientSecret, session: session)
+        let url = "https://\(environment.rawValue).\(region.rawValue).philips-healthsuite.com/"
+        self.init(baseURL: url, clientId: clientId, clientSecret: clientSecret, session: session)
     }
     
     public init(baseURL: String, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
@@ -38,9 +39,11 @@ public class IamOAuth2 {
         
         if (200...299 ~= statusCode ) {
             return try onSucces(response.value!)
-        } else {
+        } else if (400...499 ~= statusCode) {
             let iamErrorResponse = try JSONDecoder().decode(IamErrorResponse.self, from: Data(response.value!.utf8))
             throw IamError(rawValue: iamErrorResponse.error) ?? .Other
+        } else {
+            throw IamError.Other
         }
     }
     
@@ -80,6 +83,8 @@ public class IamOAuth2 {
     
     public func introspect(_ token: Token) async throws -> IntrospectResponse
     {
+        if token.accessToken.isEmpty { throw IamError.NoAccessToken }
+            
         let headers: HTTPHeaders = [
             "Authorization": "Basic \(basicAuthentication)",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -110,6 +115,8 @@ public class IamOAuth2 {
     
     public func refresh(_ token: Token) async throws -> Token
     {
+        if token.refreshToken.isEmpty { throw IamError.NoRefreshToken }
+        
         let headers: HTTPHeaders = [
             "Authorization": "Basic \(basicAuthentication)",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -142,6 +149,8 @@ public class IamOAuth2 {
     
     public func revoke(_ token: Token) async throws
     {
+        if token.accessToken.isEmpty { throw IamError.NoAccessToken }
+        
         let headers: HTTPHeaders = [
             "Authorization": "Basic \(basicAuthentication)",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -161,10 +170,7 @@ public class IamOAuth2 {
         ).serializingString(emptyResponseCodes: [200]).response
         
         try processResponse(response) { responseString in
-                return
+            self.token = Token()
         }
     }
 }
-
-
-
