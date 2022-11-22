@@ -27,49 +27,23 @@ The library dependency can be included in your projects by adding https://github
 ```
 import SwiftHsdpSdk
 
-let hsdpSkd = SwiftHsdpSdk();
-
-// Login Request
-Task {
-    let request = LoginRequest(username: "user@mail.com", password: "p@ssw0rd", 
-    basicAuthentication: BasicAuthentication(username: "public-client", password: ""));
-
-    let value = try await hsdpSkd.login(lr: request);
-    let accessToken = value.access_token
-    let refreshToken = value.refresh_token
-
-}
-
-// Introspect
-Task {
-    let request = IntrospectRequest(accessToken: accessToken, basicAuthentication: BasicAuthentication(username: "username",
-    password: "p@ssw0rd"));
-
-    let value = try await hsdpSkd.introspect(ir: request);
-    let isTokenActive = String(value.active)
-}
-
-// Refresh Token
+    let iam = IamOAuth2(region: .EuWest, environment: .Prod, clientId: "public-client", clientSecret: "")
 
 Task {
-    let request = RefreshRequest(refreshToken: refreshToken, basicAuthentication: BasicAuthentication(username: "username",
-    password: ""));
-
-    let value = try await hsdpSkd.refresh(rr: request);
-    let accessToken = value.access_token
-}
-
-// Revoke Token
-
-Task {
-    let request = RevokeRequest(token: accessToken, basicAuthentication: BasicAuthentication(username: "username", 
-    password: "p@ssw0rd"));
-
-    hsdpSkd.revoke(rr: request) {result in
-        ""
-    };
-}
-
+        do {
+            let token = try await iam.login(username: "martijn.van.welie@philips.com", password: "WishYoueWereHere");
+            print("got \(token.accessToken)")
+            
+            let introspect = try await iam.introspect()
+            print("introspect: \(introspect)")
+            
+            let refreshedToken = try await iam.refresh(iam.token)
+            print("got \(refreshedToken)")
+            
+            try await iam.revoke()
+        } catch {
+            print("error: \(error)")
+        }}
 
 
 ```
