@@ -36,20 +36,19 @@ public class IamOAuth2 {
         if case let .failure(error) = response.result {
             if (statusCode == 404) {
                 throw IamError.PathNotFound
+            } else if (statusCode == 401) {
+                // If we get here it means that despite automatically refreshing tokens we still get a 401
+                throw IamError.UnAuthorizedClient
+            } else if (400...499 ~= statusCode) {
+                let iamErrorResponse = try JSONDecoder().decode(IamErrorResponse.self, from: response.data!)
+                throw IamError(rawValue: iamErrorResponse.error) ?? .Other
             } else {
                 print(error)
                 throw IamError.Other
             }
         }
         
-        if (200...299 ~= statusCode ) {
-            return try onSucces(response.value!)
-        } else if (400...499 ~= statusCode) {
-            let iamErrorResponse = try JSONDecoder().decode(IamErrorResponse.self, from: Data(response.value!.utf8))
-            throw IamError(rawValue: iamErrorResponse.error) ?? .Other
-        } else {
-            throw IamError.Other
-        }
+        return try onSucces(response.value!)
     }
     
     public func login(username: String, password: String) async throws -> Token
@@ -72,7 +71,7 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString().response
+        ).validate().serializingString().response
                 
         return try processResponse(response) { responseString in
             let loginResponse : LoginResponse = try JSONDecoder().decode(LoginResponse.self, from: Data(response.value!.utf8))
@@ -106,7 +105,7 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString().response
+        ).validate().serializingString().response
         
         return try processResponse(response) { responseString in
             return try JSONDecoder().decode(IntrospectResponse.self, from: Data(response.value!.utf8))
@@ -120,6 +119,7 @@ public class IamOAuth2 {
     
     public func refresh(_ token: Token) async throws -> Token
     {
+        print("refresh called")
         if token.refreshToken.isEmpty { throw IamError.NoRefreshToken }
         
         let headers: HTTPHeaders = [
@@ -137,7 +137,7 @@ public class IamOAuth2 {
             baseURL + tokenPath,
             method: .post,
             parameters: parameters,
-            headers: headers).serializingString().response
+            headers: headers).validate().serializingString().response
         
         return try processResponse(response) { responseString in
             let refreshResponse : RefreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: Data(response.value!.utf8))
@@ -171,7 +171,7 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString(emptyResponseCodes: [200]).response
+        ).validate().serializingString(emptyResponseCodes: [200]).response
         
         try processResponse(response) { responseString in
             self.authenticationInterceptor.credential = Token()

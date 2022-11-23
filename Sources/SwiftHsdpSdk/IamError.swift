@@ -29,6 +29,9 @@ public enum IamError : String, Error {
     /// Client is not authorized
     case UnAuthorizedClient = "unauthorized_client"
     
+    /// Failed to get a new refresh token
+    case TokenRefreshFailed = "token_refresh_failed"
+    
     ///  An unexpected error occured
     case Other = "other"
 }

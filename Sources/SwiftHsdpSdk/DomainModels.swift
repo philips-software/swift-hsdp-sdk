@@ -67,16 +67,16 @@ public struct Token : Codable, AuthenticationCredential {
     public let accessToken: String
     public let refreshToken: String
     public let expiresIn: UInt
-    public var expiration: Date
+    public let expiration: Date
     public let timestamp: Date
 
-    public init(tokenType: String = "", scopes: [String] = [], accessToken: String = "", refreshToken: String = "", expiresIn: UInt = 0) {
+    public init(tokenType: String = "", scopes: [String] = [], accessToken: String = "", refreshToken: String = "", expiresIn: UInt = 0, expiration: Date? = nil) {
         self.tokenType = tokenType
         self.scopes = scopes
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresIn = expiresIn
-        self.expiration = Date(timeIntervalSinceNow: Double(self.expiresIn))
+        self.expiration = expiration ?? Date(timeIntervalSinceNow: Double(self.expiresIn))
         self.timestamp = .now
     }
     
