@@ -46,7 +46,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testIntrospectSucces() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/introspect")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.introspectResponse.data])
         mock.register()
@@ -57,7 +57,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testIntrospectFalseSucces() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/introspect")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.introspectFalseResponse.data])
         mock.register()
@@ -68,7 +68,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testIntrospectError() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/token")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 400, data: [.post: MockedData.errorResponse.data])
         mock.register()
@@ -82,7 +82,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRefreshSucces() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/token")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: MockedData.refreshResponse.data])
         mock.register()
@@ -93,7 +93,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRefreshError() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/token")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 400, data: [.post: MockedData.errorResponse.data])
         mock.register()
@@ -107,7 +107,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRevokeSucces() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/revoke")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 200, data: [.post: Data()])
         mock.register()
@@ -118,7 +118,7 @@ final class SwiftHsdpSdkTest: XCTestCase {
     }
     
     func testRevokeError() async throws {
-        hsdpSDK.authenticationInterceptor.credential = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
+        hsdpSDK.token = Token(accessToken: "a5e488fc-7178-4cdw-937d-7136vg713a8d", refreshToken: "62dfdf06-ba7e-4edfd-874c-a3bdfdfdfa9")
         let apiEndpoint = URL(string: "https://iam-service.eu-west.philips-healthsuite.com/authorize/oauth2/revoke")!
         let mock = Mock(url: apiEndpoint, dataType: .json, statusCode: 400, data: [.post: MockedData.errorResponse.data])
         mock.register()

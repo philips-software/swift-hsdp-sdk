@@ -5,7 +5,10 @@ public class IamOAuth2 {
     
     public let session: Session
     public let baseURL : String
-    public var token : Token { authenticationInterceptor.credential ?? Token() }
+    public var token : Token {
+        get { authenticationInterceptor.credential ?? Token() }
+        set { authenticationInterceptor.credential = newValue }
+    }
     public let basicAuthentication : String
     public let authenticator : IamOAuthAuthenticator
     public let authenticationInterceptor : AuthenticationInterceptor<IamOAuthAuthenticator>
