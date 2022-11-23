@@ -5,15 +5,15 @@ public class IamOAuth2 {
     
     public let session: Session
     public let baseURL : String
-    public var token : Token = Token()
+    public var token : Token { authenticationInterceptor.credential ?? Token() }
     public let basicAuthentication : String
-    
+    public let authenticator : IamOAuthAuthenticator
+    public let authenticationInterceptor : AuthenticationInterceptor<IamOAuthAuthenticator>
     public let tokenPath = "authorize/oauth2/token"
     public let revokePath = "authorize/oauth2/revoke"
     public let introspectPath = "authorize/oauth2/introspect"
     public let userInfoPath = "authorize/oauth2/userinfo"
     
-
     public convenience init(region: Region, environment: Environment, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
         let url = "https://\(environment.rawValue).\(region.rawValue).philips-healthsuite.com/"
         self.init(baseURL: url, clientId: clientId, clientSecret: clientSecret, session: session)
@@ -21,9 +21,11 @@ public class IamOAuth2 {
     
     public init(baseURL: String, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
         self.baseURL = baseURL
-        self.token = token
         self.session = session
         self.basicAuthentication = "\(clientId):\(clientSecret)".data(using: .utf8)!.base64EncodedString()
+        self.authenticator = IamOAuthAuthenticator()
+        self.authenticationInterceptor = AuthenticationInterceptor(authenticator: self.authenticator)
+        self.authenticator.iam = self
     }
     
     fileprivate func processResponse<T>(_ response: DataResponse<String, AFError>, onSucces: (String) throws -> T) throws -> T {
@@ -71,7 +73,7 @@ public class IamOAuth2 {
                 
         return try processResponse(response) { responseString in
             let loginResponse : LoginResponse = try JSONDecoder().decode(LoginResponse.self, from: Data(response.value!.utf8))
-            self.token = Token(from: loginResponse)
+            self.authenticationInterceptor.credential = Token(from: loginResponse)
             return self.token
         }
     }
@@ -135,9 +137,8 @@ public class IamOAuth2 {
             headers: headers).serializingString().response
         
         return try processResponse(response) { responseString in
-            print(responseString)
             let refreshResponse : RefreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: Data(response.value!.utf8))
-            self.token = self.token.update(from: refreshResponse)
+            self.authenticationInterceptor.credential = self.token.update(from: refreshResponse)
             return self.token
         }
     }
@@ -170,7 +171,28 @@ public class IamOAuth2 {
         ).serializingString(emptyResponseCodes: [200]).response
         
         try processResponse(response) { responseString in
-            self.token = Token()
+            self.authenticationInterceptor.credential = Token()
+        }
+    }
+    
+    public func userInfo() async throws -> UserInfo
+    {
+        if token.accessToken.isEmpty { throw IamError.NoAccessToken }
+        
+        let headers: HTTPHeaders = [
+            "Accept": "application/json",
+            "API-version": "2"
+        ]
+        
+        let response = await session.request(
+            baseURL + userInfoPath,
+            method: .get,
+            headers: headers,
+            interceptor: authenticationInterceptor
+        ).validate().serializingString().response
+        
+        return try processResponse(response) { responseString in
+            return try JSONDecoder().decode(UserInfo.self, from: Data(responseString.utf8))
         }
     }
 }

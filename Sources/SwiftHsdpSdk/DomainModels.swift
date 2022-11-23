@@ -1,5 +1,6 @@
 
 import Foundation
+import Alamofire
 
 public enum Environment : String {
     case Prod = "iam-service"
@@ -49,12 +50,24 @@ public struct OrganizationListItem: Codable {
     public let permissions : [String]
 }
 
-public struct Token : Codable {
+public struct UserInfo: Codable {
+    public let sub: String
+    public let name: String?
+    public let given_name: String?
+    public let family_name: String?
+    public let email: String?
+    public let address: String?
+}
+
+public struct Token : Codable, AuthenticationCredential {
+    public var requiresRefresh: Bool { Date(timeIntervalSinceNow: 60 * 2) > expiration }
+    
     public let tokenType: String
     public let scopes: [String]
     public let accessToken: String
     public let refreshToken: String
     public let expiresIn: UInt
+    public var expiration: Date
     public let timestamp: Date
 
     public init(tokenType: String = "", scopes: [String] = [], accessToken: String = "", refreshToken: String = "", expiresIn: UInt = 0) {
@@ -63,6 +76,7 @@ public struct Token : Codable {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresIn = expiresIn
+        self.expiration = Date(timeIntervalSinceNow: Double(self.expiresIn))
         self.timestamp = .now
     }
     
@@ -72,6 +86,7 @@ public struct Token : Codable {
         self.accessToken = loginResponse.access_token
         self.refreshToken = loginResponse.refresh_token ?? ""
         self.expiresIn = loginResponse.expires_in
+        self.expiration = Date(timeIntervalSinceNow: Double(self.expiresIn))
         self.timestamp = .now
     }
     
