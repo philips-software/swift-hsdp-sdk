@@ -5,15 +5,18 @@ public class IamOAuth2 {
     
     public let session: Session
     public let baseURL : String
-    public var token : Token = Token()
+    public var token : Token {
+        get { authenticationInterceptor.credential ?? Token() }
+        set { authenticationInterceptor.credential = newValue }
+    }
     public let basicAuthentication : String
-    
+    public let authenticator : IamOAuthAuthenticator
+    public let authenticationInterceptor : AuthenticationInterceptor<IamOAuthAuthenticator>
     public let tokenPath = "authorize/oauth2/token"
     public let revokePath = "authorize/oauth2/revoke"
     public let introspectPath = "authorize/oauth2/introspect"
     public let userInfoPath = "authorize/oauth2/userinfo"
     
-
     public convenience init(region: Region, environment: Environment, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
         let url = "https://\(environment.rawValue).\(region.rawValue).philips-healthsuite.com/"
         self.init(baseURL: url, clientId: clientId, clientSecret: clientSecret, session: session)
@@ -21,9 +24,11 @@ public class IamOAuth2 {
     
     public init(baseURL: String, clientId: String, clientSecret: String, token: Token = Token(), session: Session = Session.default) {
         self.baseURL = baseURL
-        self.token = token
         self.session = session
         self.basicAuthentication = "\(clientId):\(clientSecret)".data(using: .utf8)!.base64EncodedString()
+        self.authenticator = IamOAuthAuthenticator()
+        self.authenticationInterceptor = AuthenticationInterceptor(authenticator: self.authenticator)
+        self.authenticator.iam = self
     }
     
     fileprivate func processResponse<T>(_ response: DataResponse<String, AFError>, onSucces: (String) throws -> T) throws -> T {
@@ -31,20 +36,19 @@ public class IamOAuth2 {
         if case let .failure(error) = response.result {
             if (statusCode == 404) {
                 throw IamError.PathNotFound
+            } else if (statusCode == 401) {
+                // If we get here it means that despite automatically refreshing tokens we still get a 401
+                throw IamError.UnAuthorizedClient
+            } else if (400...499 ~= statusCode) {
+                let iamErrorResponse = try JSONDecoder().decode(IamErrorResponse.self, from: response.data!)
+                throw IamError(rawValue: iamErrorResponse.error) ?? .Other
             } else {
                 print(error)
                 throw IamError.Other
             }
         }
         
-        if (200...299 ~= statusCode ) {
-            return try onSucces(response.value!)
-        } else if (400...499 ~= statusCode) {
-            let iamErrorResponse = try JSONDecoder().decode(IamErrorResponse.self, from: Data(response.value!.utf8))
-            throw IamError(rawValue: iamErrorResponse.error) ?? .Other
-        } else {
-            throw IamError.Other
-        }
+        return try onSucces(response.value!)
     }
     
     public func login(username: String, password: String) async throws -> Token
@@ -67,11 +71,11 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString().response
+        ).validate().serializingString().response
                 
         return try processResponse(response) { responseString in
             let loginResponse : LoginResponse = try JSONDecoder().decode(LoginResponse.self, from: Data(response.value!.utf8))
-            self.token = Token(from: loginResponse)
+            self.authenticationInterceptor.credential = Token(from: loginResponse)
             return self.token
         }
     }
@@ -101,7 +105,7 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString().response
+        ).validate().serializingString().response
         
         return try processResponse(response) { responseString in
             return try JSONDecoder().decode(IntrospectResponse.self, from: Data(response.value!.utf8))
@@ -115,6 +119,7 @@ public class IamOAuth2 {
     
     public func refresh(_ token: Token) async throws -> Token
     {
+        print("refresh called")
         if token.refreshToken.isEmpty { throw IamError.NoRefreshToken }
         
         let headers: HTTPHeaders = [
@@ -132,12 +137,11 @@ public class IamOAuth2 {
             baseURL + tokenPath,
             method: .post,
             parameters: parameters,
-            headers: headers).serializingString().response
+            headers: headers).validate().serializingString().response
         
         return try processResponse(response) { responseString in
-            print(responseString)
             let refreshResponse : RefreshResponse = try JSONDecoder().decode(RefreshResponse.self, from: Data(response.value!.utf8))
-            self.token = self.token.update(from: refreshResponse)
+            self.authenticationInterceptor.credential = self.token.update(from: refreshResponse)
             return self.token
         }
     }
@@ -167,10 +171,31 @@ public class IamOAuth2 {
             method: .post,
             parameters: parameters,
             headers: headers
-        ).serializingString(emptyResponseCodes: [200]).response
+        ).validate().serializingString(emptyResponseCodes: [200]).response
         
         try processResponse(response) { responseString in
-            self.token = Token()
+            self.authenticationInterceptor.credential = Token()
+        }
+    }
+    
+    public func userInfo() async throws -> UserInfo
+    {
+        if token.accessToken.isEmpty { throw IamError.NoAccessToken }
+        
+        let headers: HTTPHeaders = [
+            "Accept": "application/json",
+            "API-version": "2"
+        ]
+        
+        let response = await session.request(
+            baseURL + userInfoPath,
+            method: .get,
+            headers: headers,
+            interceptor: authenticationInterceptor
+        ).validate().serializingString().response
+        
+        return try processResponse(response) { responseString in
+            return try JSONDecoder().decode(UserInfo.self, from: Data(responseString.utf8))
         }
     }
 }
